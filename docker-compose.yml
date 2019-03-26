@@ -1,0 +1,97 @@
+version: '3'
+services:
+
+  db:
+    image: mysql
+    environment:
+      MYSQL_DATABASE: 'stakepool'
+      MYSQL_USER: 'stakepool'
+      MYSQL_PASSWORD: 'stakepool'
+      MYSQL_ROOT_PASSWORD: 'stakepool'
+    expose:
+      - 3306
+    ports:
+      - 3306:3306
+    volumes:
+      - db-data:/var/lib/mysql
+
+  exccstakepool:
+    image: exccco/exccstakepool
+    volumes:
+      - ./conf/exccstakepool.conf:/app/exccstakepool.conf
+      - ./certs/exccwallet.cert:/app/exccwallet.cert
+      - ./certs/exccwallet2.cert:/app/exccwallet2.cert
+      - ./certs/stakepoold.cert:/app/stakepoold.cert
+      - ./certs/stakepoold2.cert:/app/stakepoold2.cert
+    ports:
+      - 8080:80
+    depends_on:
+      - db
+      - exccwallet
+      - exccwallet2
+      - stakepoold
+      - stakepoold2
+
+  stakepoold:
+    image: exccco/stakepoold
+    volumes:
+      - ./conf/stakepoold.conf:/app/stakepoold.conf
+      - ./certs/stakepoold.cert:/data/rpc.cert
+      - ./certs/stakepoold.key:/data/rpc.key
+      - ./certs/exccd.cert:/app/exccd.cert
+      - ./certs/exccwallet.cert:/app/exccwallet.cert
+    depends_on:
+      - exccd
+      - exccwallet
+      - db
+
+  stakepoold2:
+    image: exccco/stakepoold
+    volumes:
+      - ./conf/stakepoold2.conf:/app/stakepoold.conf
+      - ./certs/stakepoold2.cert:/data/rpc.cert
+      - ./certs/stakepoold2.key:/data/rpc.key
+      - ./certs/exccd.cert:/app/exccd.cert
+      - ./certs/exccwallet2.cert:/app/exccwallet2.cert
+    depends_on:
+      - exccd
+      - exccwallet2
+      - db
+
+  exccd:
+    image: exccco/exccd
+    ports:
+      - 9666:9666
+    volumes:
+      - ./conf/exccd.conf:/app/exccd.conf
+      - ./certs/exccd.cert:/app/rpc.cert
+      - ./certs/exccd.key:/app/rpc.key
+      - exccd-data:/data
+
+  exccwallet:
+    image: exccco/exccwallet
+    volumes:
+      - ./conf/exccwallet.conf:/app/exccwallet.conf
+      - ./certs/exccd.cert:/app/exccd.cert
+      - ./certs/exccwallet.cert:/app/rpc.cert
+      - ./certs/exccwallet.key:/app/rpc.key
+      - exccwallet-data:/data
+    depends_on:
+      - exccd
+
+  exccwallet2:
+    image: exccco/exccwallet
+    volumes:
+      - ./conf/exccwallet.conf:/app/exccwallet.conf
+      - ./certs/exccd.cert:/app/exccd.cert
+      - ./certs/exccwallet2.cert:/app/rpc.cert
+      - ./certs/exccwallet2.key:/app/rpc.key
+      - exccwallet2-data:/data
+    depends_on:
+      - exccd
+
+volumes:
+  db-data:
+  exccd-data:
+  exccwallet-data:
+  exccwallet2-data:
